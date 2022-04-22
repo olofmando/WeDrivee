@@ -1,0 +1,38 @@
+﻿@page "/booking"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using WeDrivee.Server.Models
+@using WeDrivee.Shared
+@attribute [Authorize]
+@inject HttpClient Http
+
+<h3>Book your car here</h3>
+
+<EditForm Model="booking" OnSubmit="HandleBooking">
+    <label for="CarId">Car</label>
+    <select class="form-control selectpicker" @bind="booking.CarId">
+        <option value="1">Volvo</option>
+        <option value="2">Saab</option>
+        <option value="3">Fiat</option>
+       @* @foreach (var item in Countries)
+        {
+            <option value="@.Id">@item.Name</option>
+            // Blazor needs to know what values it binds to!
+        }*@
+    </select>
+    <label for="StartDate">Start date</label>
+    <InputDate @bind-Value="booking.Start"></InputDate>
+     <label for="EndDate">End date</label>
+    <InputDate @bind-Value="booking.End"></InputDate><br />
+    <button type="submit" class="btn btn-primary">Finalize</button>
+</EditForm>
+
+
+@code {
+    BookingDto booking = new BookingDto();
+
+        async Task HandleBooking()
+    {
+       
+    }
+}
