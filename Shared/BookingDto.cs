@@ -11,5 +11,6 @@ namespace WeDrivee.Shared
         public int CarId { get; set; }
         public DateTime Start { get; set; } = DateTime.Now;
         public DateTime End { get; set; } = DateTime.Now;
+        public string Username  { get; set; }   
     }
 }

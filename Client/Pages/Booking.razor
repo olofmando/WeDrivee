@@ -1,10 +1,14 @@
 ﻿@page "/booking"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using WeDrivee.Client.Services
 @using WeDrivee.Server.Models
 @using WeDrivee.Shared
 @attribute [Authorize]
-@inject HttpClient Http
+@inject AuthenticationStateProvider AuthenticationState
+@inject BookingService BookingService
+@inject CarService CarService
+@inject IJSRuntime JSruntime
 
 <h3>Book your car here</h3>
 
@@ -14,15 +18,10 @@
         <option value="1">Volvo</option>
         <option value="2">Saab</option>
         <option value="3">Fiat</option>
-       @* @foreach (var item in Countries)
-        {
-            <option value="@.Id">@item.Name</option>
-            // Blazor needs to know what values it binds to!
-        }*@
     </select>
     <label for="StartDate">Start date</label>
     <InputDate @bind-Value="booking.Start"></InputDate>
-     <label for="EndDate">End date</label>
+    <label for="EndDate">End date</label>
     <InputDate @bind-Value="booking.End"></InputDate><br />
     <button type="submit" class="btn btn-primary">Finalize</button>
 </EditForm>
@@ -31,8 +30,18 @@
 @code {
     BookingDto booking = new BookingDto();
 
-        async Task HandleBooking()
+    async Task HandleBooking()
     {
-       
+        var Cars = await CarService.GetCars();
+        var selectedCar = Cars.SingleOrDefault(c => c.Id == booking.CarId);
+        var authstate = await AuthenticationState.GetAuthenticationStateAsync();
+        var user = authstate.User;
+        booking.Username = user.Identity.Name;
+        bool confirm = await JSruntime.InvokeAsync<bool>("confirm", $"The total cost for the booking will be {(selectedCar.DailyPrice * (booking.End - booking.Start).Days)+selectedCar.DailyPrice} SEK.");
+        if (confirm)
+        {
+            await BookingService.PostBook(booking);
+
+        }
     }
 }

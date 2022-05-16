@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using WeDrivee.Server.Data;
+using WeDrivee.Server.Models;
 using WeDrivee.Shared;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -9,6 +12,13 @@ namespace WeDrivee.Server.Controllers
     [ApiController]
     public class BookingController : ControllerBase
     {
+        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly ApplicationDbContext _appDbContext;
+        public BookingController(SignInManager<ApplicationUser> signInManager, ApplicationDbContext applicationDbContext)
+        {
+            _signInManager = signInManager;
+            _appDbContext = applicationDbContext;
+        }
         // GET: api/<BookingController>
         [HttpGet]
         public IEnumerable<string> Get()
@@ -25,11 +35,21 @@ namespace WeDrivee.Server.Controllers
 
         // POST api/<BookingController>
         [HttpPost("Confirm")]
-        public void Post([FromBody] BookingDto bookingDto)
+        public async Task Post(BookingDto bookingDto)
         {
-            Car = bookingDto.CarId,
-            Start = bookingDto.Start,
-            End = bookingDto.End
+            if (bookingDto != null)
+            {
+                ApplicationUser bookingUser = await _signInManager.UserManager.FindByNameAsync(bookingDto.Username);
+                BookingModel newBooking = new BookingModel()
+                {
+                    CarId = bookingDto.CarId,
+                    Start = bookingDto.Start,
+                    End = bookingDto.End,
+                    UserId = bookingUser.Id
+                };
+                await _appDbContext.AddAsync(newBooking);
+                await _appDbContext.SaveChangesAsync();
+            }
         }
 
         // PUT api/<BookingController>/5

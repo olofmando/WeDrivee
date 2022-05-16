@@ -5,10 +5,10 @@
         public int Id { get; set; }
         public DateTime Start { get; set; }
         public DateTime End { get; set; }
-        public string? UserToken { get; set; }
+        public string UserId { get; set; }
 
         // Relations
         public int CarId { get; set; }
-        public CarModel? Car { get; set; }
+        public CarModel Car { get; set; }
     }
 }

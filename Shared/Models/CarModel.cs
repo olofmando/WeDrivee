@@ -3,7 +3,9 @@
     public class CarModel
     {
         public int Id { get; set; }
-        public ICollection<BookingModel> Bookings { get; set; }
+        public string Name { get; set; }
         public int DailyPrice { get; set; }
+
+        public List<BookingModel> Bookings { get; set; }
     }
 }
