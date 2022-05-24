@@ -10,9 +10,9 @@ namespace WeDrivee.Client.Services
         {
             _httpClient = client;
         }
-        public async Task<IEnumerable<CarModel>> GetCars()
+        public async Task<List<CarModel>> GetCars()
         {
-           return await _httpClient.GetFromJsonAsync<IEnumerable<CarModel>>("api/car/");
+           return await _httpClient.GetFromJsonAsync<List<CarModel>>("api/car/");
         }
     }
 }

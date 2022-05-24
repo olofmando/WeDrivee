@@ -11,13 +11,29 @@
 @inject IJSRuntime JSruntime
 
 <h3>Book your car here</h3>
+@if (!String.IsNullOrEmpty(errorMsg))
+{
+    <div class="alert alert-danger">@errorMsg</div>
+}
 
-<EditForm Model="booking" OnSubmit="HandleBooking">
+<EditForm Model="booking" OnValidSubmit="HandleBooking">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
     <label for="CarId">Car</label>
     <select class="form-control selectpicker" @bind="booking.CarId">
-        <option value="1">Volvo</option>
-        <option value="2">Saab</option>
-        <option value="3">Fiat</option>
+        <option>Please select</option>
+        @foreach (var car in cars)
+        {
+
+            if (CarIsAvailable(car))
+            {
+                <option value="@car.Id">@car.Name</option>
+            }
+            else
+            {
+                <option disabled value="@car.Id">@car.Name <span>available again</span> <span>@GetAvailableDate(car).GetDateTimeFormats('d').First()</span></option>
+            }
+        }
     </select>
     <label for="StartDate">Start date</label>
     <InputDate @bind-Value="booking.Start"></InputDate>
@@ -29,15 +45,63 @@
 
 @code {
     BookingDto booking = new BookingDto();
+    string errorMsg = string.Empty;
+
+    List<CarModel> cars = new List<CarModel>();
+    List<BookingModel> bookings = new List<BookingModel>();
+    protected override async Task OnInitializedAsync()
+    {
+        bookings = await BookingService.Get();
+        cars = await CarService.GetCars();
+    }
+    bool CarIsAvailable(CarModel car)
+    {
+        if (GetBookingsByCar(car).Count < 1) return true;
+        var firstcar = GetBookingsByCar(car).OrderByDescending(b => b.Id).First();
+        if (firstcar.End < DateTime.Now)
+        {
+            return true;
+        }
+        return false;
+
+    }
+    DateTime GetAvailableDate(CarModel car)
+    {
+        if (!CarIsAvailable(car))
+        {
+            return GetBookingsByCar(car).OrderByDescending(b => b.Id).First().End;
+        }
+        return DateTime.Now;
+    }
+    List<BookingModel> GetBookingsByCar(CarModel car)
+    {
+        return bookings.Where(b => b.CarId == car.Id).ToList();
+    }
 
     async Task HandleBooking()
     {
-        var Cars = await CarService.GetCars();
-        var selectedCar = Cars.SingleOrDefault(c => c.Id == booking.CarId);
+        if (booking.Start.Date < DateTime.Now.Date)
+        {
+            errorMsg = "Wrong date!";
+            StateHasChanged();
+            return;
+        }
+
+        if (booking.End > DateTime.Now.AddDays(7))
+        {
+            errorMsg = $"Booking end date has been changed to {DateTime.Now.AddDays(7).GetDateTimeFormats('d').First()}";
+            booking.End = DateTime.Now.AddDays(7);
+            StateHasChanged();
+        }
+
+
+
+
+        var selectedCar = cars.SingleOrDefault(c => c.Id == booking.CarId);
         var authstate = await AuthenticationState.GetAuthenticationStateAsync();
         var user = authstate.User;
         booking.Username = user.Identity.Name;
-        bool confirm = await JSruntime.InvokeAsync<bool>("confirm", $"The total cost for the booking will be {(selectedCar.DailyPrice * (booking.End - booking.Start).Days)+selectedCar.DailyPrice} SEK.");
+        bool confirm = await JSruntime.InvokeAsync<bool>("confirm", $"The total cost for the booking will be {(selectedCar.DailyPrice * (booking.End - booking.Start).Days) + selectedCar.DailyPrice} SEK.");
         if (confirm)
         {
             await BookingService.PostBook(booking);

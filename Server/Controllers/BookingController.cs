@@ -21,16 +21,19 @@ namespace WeDrivee.Server.Controllers
         }
         // GET: api/<BookingController>
         [HttpGet]
-        public IEnumerable<string> Get()
+        public IEnumerable<BookingModel> Get()
         {
-            return new string[] { "value1", "value2" };
+            return _appDbContext.Bookings;
         }
 
         // GET api/<BookingController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        [HttpGet("{username}")]
+        public async Task<IEnumerable<BookingModel>> Get(string username)
         {
-            return "value";
+            ApplicationUser bookingUser = await _signInManager.UserManager.FindByNameAsync(username);
+
+            return _appDbContext.Bookings.Where(b => b.UserId == bookingUser.Id && b.End > DateTime.Now);
+
         }
 
         // POST api/<BookingController>
@@ -53,9 +56,17 @@ namespace WeDrivee.Server.Controllers
         }
 
         // PUT api/<BookingController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        [HttpPut("Unbook")]
+        public async Task Put(UnbookDto unbook)
         {
+            ApplicationUser bookingUser = await _signInManager.UserManager.FindByNameAsync(unbook.Username);
+            if(bookingUser != null)
+            {
+              var booking = _appDbContext.Bookings.SingleOrDefault(b => b.Id == unbook.Id&& b.UserId == bookingUser.Id);
+                booking.End = DateTime.Now;
+                await _appDbContext.SaveChangesAsync();
+            }
+
         }
 
         // DELETE api/<BookingController>/5

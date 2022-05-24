@@ -15,6 +15,8 @@ namespace WeDrivee.Server.Data
         }
 
         public DbSet<CarModel> Cars { get; set; }
+        public DbSet<BookingModel> Bookings { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
