@@ -1,8 +1,64 @@
 ﻿@page "/"
+@using WeDrivee.Client.Services
+@using WeDrivee.Server.Models
+@using WeDrivee.Shared
+@inject AuthenticationStateProvider AuthenticationState
+@inject BookingService BookingService
+@inject CarService CarService
 
 <PageTitle>Index</PageTitle>
 
 <h1>Car booking service</h1>
 
 
+@foreach (var booking in Bookings.Where(b => b.Start > DateTime.Today.AddDays(1)))
+{
+    @GetCarFromBooking(booking).Name <br/>
+    <span> @booking.Start.GetDateTimeFormats('d').First() </span> <span>-</span> <span> @booking.End.GetDateTimeFormats('d').First() </span>
+<br/>
 
+    <button class="btn btn-danger" @onclick="@(()=> HandleUnbook(booking))">Unbook booking</button>
+
+}
+
+
+
+@code {
+    List<CarModel> Cars = new List<CarModel>();
+
+    CarModel GetCarFromBooking(BookingModel booking)
+    {
+        return Cars.SingleOrDefault(c => c.Id == booking.CarId);
+    }
+
+
+    List<BookingModel> Bookings = new List<BookingModel>();
+    protected override async Task OnInitializedAsync()
+    {
+        Cars = await CarService.GetCars();
+        await Reload();
+    }
+
+    public async Task Reload()
+    {
+        var authstate = await AuthenticationState.GetAuthenticationStateAsync();
+        var user = authstate.User;
+        Bookings = await BookingService.Get(user.Identity.Name);
+        StateHasChanged();
+    }
+
+    public async Task HandleUnbook(BookingModel booking)
+    {
+
+        var authstate = await AuthenticationState.GetAuthenticationStateAsync();
+        var user = authstate.User;
+
+        await BookingService.Unbook(new UnbookDto()
+            {
+                Username = user.Identity.Name,
+                Id = booking.Id
+
+            });
+            await Reload();
+    }
+}
